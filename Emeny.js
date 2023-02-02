@@ -5,8 +5,8 @@ export default class Enemy {
         this.x = x;
         this.y = y;
         //set image width & height by size of image
-        this.width = 32;
-        this.height = 44;
+        this.width = 44;
+        this.height = 32;
 
         this.image = new Image()
         //get image dynamical
@@ -15,7 +15,7 @@ export default class Enemy {
 
     //implemnt draw enemy
     draw(ctx) {
-        ctx.drawImage(this.image, this.x, this.y, this.height, this.width)
+        ctx.drawImage(this.image, this.x, this.y, this.width, this.height);
     }
 
     move(xVelocity, yVelocity){
