@@ -5,12 +5,12 @@ export default class EnemyController {
 
     //tilemap the enemies
     enemyMap = [
-        [0, 1, 1, 1, 1, 1, 1, 1, 1, 0],
-        [1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-        [2, 2, 2, 3, 3, 3, 3, 2, 2, 2],
-        [2, 2, 2, 3, 3, 3, 3, 2, 2, 2],
-        [1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-        [2, 2, 2, 2, 2, 2, 2, 2, 2, 2],
+        [0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0],
+        [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+        [2, 2, 2, 3, 3, 3, 3, 3, 3, 3, 3, 3, 2, 2, 2],
+        [2, 2, 2, 3, 3, 3, 3, 3, 3, 3, 3, 3, 2, 2, 2],
+        [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+        [2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2],
     ];
 
     enemyRows = [];
@@ -31,6 +31,9 @@ export default class EnemyController {
         this.canvas = canvas;
         this.enemyBulletController = enemyBulletController;
         this.playerBulletController = playerBulletController;
+
+        this.enemyDeathSound = new Audio("sounds/enemy-death.wav");
+        this.enemyDeathSound.volume = 0.3;
 
         //create the enemies
         this.createEnemies();
@@ -53,17 +56,17 @@ export default class EnemyController {
                 if (this.moveDown(MovingDirection.left)) {
                     break;
                 }
-            } 
-            else if (this.currentDirection === MovingDirection.left){
+            }
+            else if (this.currentDirection === MovingDirection.left) {
                 this.xVelocity = -this.defaultXVelocity;
                 this.yVelocity = 0;
                 const leftMostEnemy = enemyRow[0];
-                if (leftMostEnemy.x <= 0){
+                if (leftMostEnemy.x <= 0) {
                     this.currentDirection = MovingDirection.downRight;
                     break;
                 }
             }
-            else if(this.currentDirection === MovingDirection.downRight){
+            else if (this.currentDirection === MovingDirection.downRight) {
                 if (this.moveDown(MovingDirection.right)) {
                     break;
                 }
@@ -85,25 +88,40 @@ export default class EnemyController {
     draw(ctx) {
         this.decrementMoveDownTimer();
         this.updateVelocityAndDirection();
+        this.collisionDetection();
         this.drawEnemies(ctx);
         this.resetMoveDownTimer();
         this.fireBullet();
     }
-    
+
+    collisionDetection() {
+        this.enemyRows.forEach(enemyRow => {
+            enemyRow.forEach((enemy, enemyIndex) => {
+                if (this.playerBulletController.collideWith(enemy)) {
+                    this.enemyDeathSound.currentTime = 0;
+                    this.enemyDeathSound.play();
+                    enemyRow.splice(enemyIndex, 1);
+                }
+            });
+        });
+
+        this.enemyRows = this.enemyRows.filter(enemyRow => enemyRow.length > 0);
+    }
+
     fireBullet() {
-        this.fireBulletTimer --;
+        this.fireBulletTimer--;
         if (this.fireBulletTimer <= 0) {
             this.fireBulletTimer = this.fireBulletTimerDefault;
             const allEnemies = this.enemyRows.flat();
             const enemyIndex = Math.floor(Math.random() * allEnemies.length);
             const enemy = allEnemies[enemyIndex];
-            this.enemyBulletController.shoot(enemy.x + enemy.width/2 ,enemy.y, -3);
+            this.enemyBulletController.shoot(enemy.x + enemy.width / 2, enemy.y, -3);
             console.log(enemyIndex);
         }
     }
 
     resetMoveDownTimer() {
-        if(this.moveDownTimer <= 0){
+        if (this.moveDownTimer <= 0) {
             this.moveDownTimer = this.moveDownTimerDefault;
         }
     }
@@ -111,7 +129,7 @@ export default class EnemyController {
     decrementMoveDownTimer() {
         if (this.currentDirection === MovingDirection.downLeft ||
             this.currentDirection == MovingDirection.downRight) {
-            this.moveDownTimer --;
+            this.moveDownTimer--;
         }
     }
 
@@ -136,5 +154,9 @@ export default class EnemyController {
                 }
             });
         })
+    }
+
+    collideWith(sprite) {
+        return this.enemyRows.flat().some(enemy => enemy.collideWith(sprite))
     }
 }
